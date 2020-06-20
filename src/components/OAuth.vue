@@ -11,17 +11,35 @@
 
 <script>
 import firebase from "firebase";
+import { db } from "../plugins/firebase";
+
 export default {
   // ここで扱う情報一覧
   data() {
     return {
-      user: {},
+      user: {}, // ツイッターのログイン情報
+      players: [], // ゲームに参加しているプレイヤー情報
     };
   },
   created() {
     // 状態が変化したときに読み込む
     firebase.auth().onAuthStateChanged((user) => {
       this.user = user ? user : {};
+      if (this.user.uid) {
+        console.log(user);
+        db.collection("users")
+          .doc(user.uid)
+          .set({
+            name: user.displayName,
+            // hash:
+            photo: user.photoURL,
+            prev: -1,
+            next: -1,
+            value: 0,
+            playable: 1,
+          });
+        console.log(this.user.uid);
+      }
     });
   },
   methods: {
@@ -31,6 +49,11 @@ export default {
     },
     signOut() {
       firebase.auth().signOut();
+    },
+    firestore() {
+      return {
+        players: db.collection("users"),
+      };
     },
   },
 };
