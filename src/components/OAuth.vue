@@ -27,18 +27,36 @@ export default {
       this.user = user ? user : {};
       if (this.user.uid) {
         console.log(user);
+        const crypto = require("crypto");
+        const hash = crypto
+          .createHash("sha256")
+          .update(user.uid, "utf8")
+          .digest("hex");
+        // db.collection("users")
+        //   .doc()
+        //   .set({
+        //     name: user.displayName,
+        //     hash: hash,
+        //     photo: user.photoURL,
+        //     prev: null,
+        //     next: null,
+        //     value: 0,
+        //     playable: true,
+        //   });
         db.collection("users")
           .doc(user.uid)
-          .set({
-            name: user.displayName,
-            // hash:
-            photo: user.photoURL,
-            prev: -1,
-            next: -1,
-            value: 0,
-            playable: 1,
-          });
-        console.log(this.user.uid);
+          .set(
+            {
+              name: user.displayName,
+              hash: hash,
+              photo: user.photoURL,
+              prev: null,
+              next: null,
+              // value: 0,
+              playable: true,
+            },
+            { merge: true }
+          );
       }
     });
   },
@@ -48,6 +66,9 @@ export default {
       firebase.auth().signInWithPopup(provider);
     },
     signOut() {
+      db.collection("users")
+        .doc(this.user.uid)
+        .set({});
       firebase.auth().signOut();
     },
     firestore() {
