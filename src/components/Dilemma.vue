@@ -34,7 +34,7 @@
     }),
     firestore() {
       return {
-        // firestoreのcommentsコレクションを参照
+        // データベースからユーザ情報を取得する
         users: db.collection('users').orderBy('value')
       }
     },
