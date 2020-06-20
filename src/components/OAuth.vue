@@ -1,13 +1,25 @@
 <template>
   <div id="twitter-signin">
-    <li class="signin" @click="signIn">ゲームに参加する</li>
+    <div v-if="user.uid" key="login">
+      <li class="signout" @click="signOut">ゲームから離脱する</li>
+    </div>
+    <div v-else key="logout">
+      <li class="signin" @click="signIn">ゲームに参加する</li>
+    </div>
   </div>
 </template>
 
 <script>
 import firebase from "firebase";
 export default {
+  // ここで扱う情報一覧
+  data() {
+    return {
+      user: {},
+    };
+  },
   created() {
+    // 状態が変化したときに読み込む
     firebase.auth().onAuthStateChanged((user) => {
       this.user = user ? user : {};
     });
@@ -30,7 +42,8 @@ export default {
   margin: 0 auto;
 }
 
-.signin {
+.signin,
+.signout {
   display: inline-block;
   /* text-align: center; */
   margin: 0 auto;
