@@ -14,19 +14,22 @@ import firebase from "firebase";
 import { db } from "../plugins/firebase";
 
 export default {
+  // props: {
+  //   isSignIn: Boolean
+  // },
   // ここで扱う情報一覧
   data() {
     return {
       user: {}, // ツイッターのログイン情報
-      players: [], // ゲームに参加しているプレイヤー情報
+      players: [] // ゲームに参加しているプレイヤー情報
     };
   },
   created() {
     // 状態が変化したときに読み込む
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(user => {
       this.user = user ? user : {};
       if (this.user.uid) {
-        console.log(user);
+        this.$store.state.uid = this.user.uid; // ログイン時に全コンポーネントにuidを共有
         const crypto = require("crypto");
         const hash = crypto
           .createHash("sha256")
@@ -53,7 +56,7 @@ export default {
               prev: null,
               next: null,
               // value: 0,
-              playable: true,
+              playable: true
             },
             { merge: true }
           );
@@ -66,17 +69,21 @@ export default {
       firebase.auth().signInWithPopup(provider);
     },
     signOut() {
+      this.$store.state.uid = null; // ログイン時に全コンポーネントにuidを共有
       db.collection("users")
         .doc(this.user.uid)
-        .set({});
+        .set(
+          { playable: false, value: 0, prev: null, next: null },
+          { merge: true }
+        );
       firebase.auth().signOut();
     },
     firestore() {
       return {
-        players: db.collection("users"),
+        players: db.collection("users")
       };
-    },
-  },
+    }
+  }
 };
 </script>
 

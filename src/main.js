@@ -9,7 +9,15 @@ Vue.config.productionTip = false;
 
 Vue.use(Vuex);
 
+const store = new Vuex.Store({
+  state: {
+    isSignIn: true,
+    uid: null,
+  },
+});
+
 new Vue({
   vuetify,
+  store,
   render: (h) => h(App),
 }).$mount("#app");

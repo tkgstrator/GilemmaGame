@@ -1,14 +1,10 @@
 <template>
   <div id="playerstable">
     <table name="players" tag="div" class="list content">
-      <tr
-        v-for="({ name, value, prev, next }, id) in players"
-        :key="id"
-        class="playerlist"
-      >
+      <tr v-for="({ name, value, prev, next }, id) in players" :key="id" class="playerlist">
         <td>{{ name }}</td>
-        <td>{{ prev == null ? "未投票" : "投票済" }}</td>
-        <td>{{ next == null ? "未投票" : "投票済" }}</td>
+        <td>{{ prev == null ? "未投票" : type[prev] }}</td>
+        <td>{{ next == null ? "未投票" : type[next] }}</td>
         <td>{{ value }}</td>
       </tr>
     </table>
@@ -25,23 +21,24 @@ export default {
       user: {},
       name: {},
       players: [],
+      type: ["沈黙", "協調", "裏切り"]
     };
   },
   firestore() {
     return {
-      players: db.collection("users"),
+      players: db.collection("users").where("playable", "==", true)
     };
-  },
+  }
 };
 </script>
 
 <style>
 table {
+  max-width: 800px;
   width: 90%;
-
-  margin: 3.5vw auto;
+  margin: 20px auto;
   font-family: "hakidame";
-  font-size: 3vw;
+  font-size: 30px;
   border: 3px solid;
 }
 
