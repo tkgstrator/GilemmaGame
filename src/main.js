@@ -13,6 +13,22 @@ const store = new Vuex.Store({
   state: {
     isSignIn: true,
     uid: null,
+    hash: null,
+  },
+  getters: {
+    hash(state) {
+      return state.hash;
+    },
+  },
+  mutations: {
+    setHash(state, payload) {
+      state.hash = payload.hash;
+    },
+  },
+  actions: {
+    doUpdateHash({ commit }, hash) {
+      commit("sethash", { hash });
+    },
   },
 });
 
