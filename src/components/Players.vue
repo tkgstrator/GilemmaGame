@@ -1,10 +1,13 @@
 <template>
   <div id="playerstable">
     <table name="players" tag="div" class="list content">
-      <tr v-for="({ name, value, prev, next }, id) in players" :key="id" class="playerlist">
+      <tr v-for="({ name, value, prev, next, hash }, id) in players" :key="id" class="playerlist">
         <td>{{ name }}</td>
-        <td>{{ prev == null ? "未投票" : type[prev] }}</td>
-        <td>{{ next == null ? "未投票" : type[next] }}</td>
+        <!-- <td>{{ hash != null ? hash.substr(0, 8) : null }}</td>
+        <td>{{ vhash!= null ? vhash.substr(0, 8) : null }}</td>-->
+        <td>{{ hash == vhash }}</td>
+        <!-- <td>{{ prev == null ? "未投票" : hash == vhash ? type[prev] : "投票済" }}</td> -->
+        <td>{{ next == null ? "未投票" : hash == vhash ? type[next] : "投票済" }}</td>
         <td>{{ value }}</td>
       </tr>
     </table>
@@ -18,11 +21,20 @@ export default {
   name: "Players",
   data() {
     return {
-      user: {},
-      name: {},
+      // user: {},
+      vhash: this.$store.state.hash,
       players: [],
       type: ["沈黙", "協調", "裏切り"]
     };
+  },
+  mounted() {
+    this.$store.watch(
+      (stage, getters) => getters.hash,
+      (newValue, oldValue) => {
+        this.vhash = newValue;
+        console.log(newValue, oldValue);
+      }
+    );
   },
   firestore() {
     return {

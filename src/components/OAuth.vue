@@ -29,23 +29,14 @@ export default {
     firebase.auth().onAuthStateChanged(user => {
       this.user = user ? user : {};
       if (this.user.uid) {
-        this.$store.state.uid = this.user.uid; // ログイン時に全コンポーネントにuidを共有
+        // ユーザがログインしていたら
         const crypto = require("crypto");
         const hash = crypto
           .createHash("sha256")
           .update(user.uid, "utf8")
           .digest("hex");
-        // db.collection("users")
-        //   .doc()
-        //   .set({
-        //     name: user.displayName,
-        //     hash: hash,
-        //     photo: user.photoURL,
-        //     prev: null,
-        //     next: null,
-        //     value: 0,
-        //     playable: true,
-        //   });
+        this.$store.state.uid = this.user.uid; // ログイン時に全コンポーネントにuidを共有
+        this.$store.state.hash = hash; // ログイン時に全コンポーネントにhashを共有
         db.collection("users")
           .doc(user.uid)
           .set(
@@ -55,7 +46,7 @@ export default {
               photo: user.photoURL,
               prev: null,
               next: null,
-              // value: 0,
+              value: 0,
               playable: true
             },
             { merge: true }
@@ -67,6 +58,7 @@ export default {
     signIn() {
       const provider = new firebase.auth.TwitterAuthProvider();
       firebase.auth().signInWithPopup(provider);
+      console.log("Login!");
     },
     signOut() {
       this.$store.state.uid = null; // ログイン時に全コンポーネントにuidを共有
@@ -77,6 +69,7 @@ export default {
           { merge: true }
         );
       firebase.auth().signOut();
+      console.log("Logout!");
     },
     firestore() {
       return {
