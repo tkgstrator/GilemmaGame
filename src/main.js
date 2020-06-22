@@ -14,6 +14,8 @@ const store = new Vuex.Store({
     uid: null,
     hash: null,
     isHost: null,
+    start_time: null,
+    game_turn: null,
   },
   getters: {
     hash(state) {
