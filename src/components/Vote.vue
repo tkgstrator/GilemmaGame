@@ -1,5 +1,8 @@
 <template>
   <div>
+    <ul v-if="this.$store.state.isHost == true" class="master">
+      <li>Game Start</li>
+    </ul>
     <ul v-if="this.$store.state.uid != null" class="negotiation">
       <li @click="onVote(0)">沈黙</li>
       <li @click="onVote(1)">協調</li>
@@ -14,21 +17,11 @@ import { db } from "../plugins/firebase";
 
 export default {
   name: "Vote",
-  // props: ["isSignIn"],
-  // props: {
-  //   isSignIn: Boolean
-  // },
   data() {
     return {
       event: Number
     };
   },
-  // firestore() {
-  //   return {
-  //     // データベースからユーザ情報を取得する
-  //     users: db.collection("users").orderBy("value")
-  //   };
-  // },
   methods: {
     onVote(event) {
       console.log(this.$store.state.uid, event);
@@ -43,6 +36,11 @@ export default {
 <style>
 .negotiation {
   padding: 0;
+  text-align: center;
+}
+
+.master {
+  padding: 20px;
   text-align: center;
 }
 
