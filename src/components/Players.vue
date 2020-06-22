@@ -1,12 +1,15 @@
 <template>
   <div id="playerstable">
     <table name="players" tag="div" class="list content">
-      <tr v-for="({ name, value, prev, next, hash }, id) in players" :key="id" class="playerlist">
+      <tr
+        v-for="({ name, value, prev, next, hash }, id) in players"
+        :key="id"
+        class="player"
+        v-bind:style="{color: hash == vhash ? 'red' : 'black'}"
+      >
         <td>{{ name }}</td>
-        <!-- <td>{{ hash != null ? hash.substr(0, 8) : null }}</td>
-        <td>{{ vhash!= null ? vhash.substr(0, 8) : null }}</td>-->
         <td>{{ hash == vhash }}</td>
-        <!-- <td>{{ prev == null ? "未投票" : hash == vhash ? type[prev] : "投票済" }}</td> -->
+        <td>{{ prev == null ? "未投票" : hash == vhash ? type[prev] : "投票済" }}</td>
         <td>{{ next == null ? "未投票" : hash == vhash ? type[next] : "投票済" }}</td>
         <td>{{ value }}</td>
       </tr>
@@ -21,8 +24,8 @@ export default {
   name: "Players",
   data() {
     return {
-      // user: {},
       vhash: this.$store.state.hash,
+      vuid: this.$store.state.uid,
       players: [],
       type: ["沈黙", "協調", "裏切り"]
     };
@@ -30,9 +33,9 @@ export default {
   mounted() {
     this.$store.watch(
       (stage, getters) => getters.hash,
-      (newValue, oldValue) => {
+      newValue => {
         this.vhash = newValue;
-        console.log(newValue, oldValue);
+        // console.log("New Hash:" + this.vhash);
       }
     );
   },

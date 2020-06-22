@@ -3,6 +3,7 @@
     <v-container>
       <Top />
       <OAuth />
+      <Timer />
       <Players />
       <Vote />
     </v-container>
@@ -15,6 +16,7 @@ import Top from "./components/Top";
 import OAuth from "./components/OAuth";
 import Players from "./components/Players";
 import Vote from "./components/Vote";
+import Timer from "./components/Timer";
 
 export default {
   name: "App",
@@ -22,7 +24,8 @@ export default {
     OAuth,
     Top,
     Players,
-    Vote
+    Vote,
+    Timer
   }
   // data() {
   //   return {
