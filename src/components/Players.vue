@@ -9,7 +9,7 @@
       >
         <td>{{ name }}</td>
         <td>{{ hash == vhash }}</td>
-        <td>{{ prev == null ? "未投票" : hash == vhash ? type[prev] : "投票済" }}</td>
+        <td>{{ prev == null ? "未投票" : type[prev] }}</td>
         <td>{{ next == null ? "未投票" : hash == vhash ? type[next] : "投票済" }}</td>
         <td>{{ value }}</td>
       </tr>
