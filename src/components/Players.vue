@@ -30,6 +30,36 @@ export default {
       type: ["沈黙", "協調", "裏切り"]
     };
   },
+  watch: {
+    players: {
+      immediate: true,
+      handler() {
+        if (this.players != null) {
+          const waitPlayer = this.players.filter(function(player) {
+            return player["next"] == 1;
+          });
+          // 全員が協調を押したらゲーム開始
+          if (
+            waitPlayer.length == this.players.length &&
+            this.players.length != 0
+          ) {
+            const rules = db.collection("rules").doc("mMNTKGPxpraq8z0KnCTB");
+            // ゲームモードがFalseならTrueに変更してゲーム開始
+            rules.get().then(function(rule) {
+              if (rule.exists) {
+                if (!rule.data()["mode"]) {
+                  db.collection("rules")
+                    .doc("mMNTKGPxpraq8z0KnCTB")
+                    .update({ mode: true, start_time: new Date().getTime() });
+                  console.log("Game Start");
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+  },
   mounted() {
     this.$store.watch(
       (stage, getters) => getters.hash,

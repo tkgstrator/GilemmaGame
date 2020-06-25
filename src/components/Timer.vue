@@ -16,7 +16,8 @@ export default {
       timeRemind: null, // 表示する時間
       gameTurn: null,
       timerObj: null,
-      start_time: Number
+      start_time: null,
+      players: []
     };
   },
   watch: {
@@ -25,11 +26,11 @@ export default {
       immediate: true,
       handler() {
         // 実行する処理
-        if (this.rule != null && this.rule.mode) {
-          // ルールがnullでなく、かつモードがTrueのときに実行する
+        // ルールがセットされているときだけ実行する
+        if (this.rule != null) {
           // 初期時間をセットし、リロードしてもズレないようにする
-          if (this.$store.state.start_time == null) {
-            // 最初の一回だけ実行するメソッド
+          if (this.rule.start_time != null) {
+            this.start_time = this.rule.start_time;
             // ゲーム開始からの経過時間を取得
             const elapsedTime = parseInt(
               (new Date().getTime() - this.rule.start_time) / 1000
@@ -37,47 +38,19 @@ export default {
             // 現在第何ゲーム目かを計算する
             this.gameTurn = parseInt(elapsedTime / 30);
             // サーバからゲーム開始時刻を読み込んで保存（これによって全員が共通の値を持てる）
-            this.$store.state.start_time =
-              this.rule.start_time + this.$store.state.game_turn * 30 * 1000;
-            this.timeRemind = 30 - (elapsedTime % 30);
-            console.log("Game Start");
+            this.timeRemind = 29 - (elapsedTime % 30);
+            console.log("GameInfo:", this.gameTurn, this.timeRemind);
             this.timeStart();
           }
         }
       }
     }
   },
-  mounted() {
-    // データベースの変更をチェック
-    db.collection("users")
-      .where("playable", "==", true)
-      .onSnapshot(function(users) {
-        db.collection("users")
-          .where("playable", "==", true)
-          .where("next", "==", 1)
-          .get()
-          .then(wait => {
-            // データベースに協調が成立してゲーム開始したこと通知する
-            // 最初の一回だけにしたいけど、簡単に書く方法はあるのだろうか？
-            if (users.size == wait.size) {
-              db.collection("rules")
-                .doc("mMNTKGPxpraq8z0KnCTB")
-                .update({
-                  mode: users.size == wait.size,
-                  start_time: new Date().getTime()
-                });
-            }
-          });
-      });
-  },
-  created() {
-    // this.time = 180;
-  },
-  computed: {},
   firestore() {
     return {
       // 標準ルールを取得
-      rule: db.collection("rules").doc("mMNTKGPxpraq8z0KnCTB")
+      rule: db.collection("rules").doc("mMNTKGPxpraq8z0KnCTB"),
+      players: db.collection("users").where("playable", "==", true)
     };
   },
   methods: {
@@ -86,16 +59,19 @@ export default {
         let self = this;
         this.timerObj = setInterval(function() {
           self.timeCount();
-        }, 200);
+        }, 1000);
       }
     },
     timeCount() {
       const elapsedTime = parseInt(
-        (new Date().getTime() - this.$store.state.start_time) / 1000
+        (new Date().getTime() - this.start_time) / 1000
       );
       this.gameTurn = parseInt(elapsedTime / 30);
-      this.timeRemind = 30 - (elapsedTime % 30);
-      console.log("Game+Time:", this.gameTurn, this.timeRemind);
+      this.timeRemind = 29 - (elapsedTime % 30);
+      if (this.timeRemind == 0) {
+        this.calcValue();
+      }
+      // console.log("Game+Time:", this.gameTurn, this.timeRemind);
     },
     gameClear() {
       // タイマーを初期化する
@@ -104,6 +80,67 @@ export default {
     },
     calcValue() {
       // 指定秒数経過後に点数を計算する
+      if (this.players[0].id == "3eiBXf5f2QQ6Mv1a6Ew5Zn3O1fx2") {
+        // 参加しているプレイヤーで最もIDが若いプレイヤーをホストとする
+        // ホストは全員の点数を計算する
+
+        // 未投票のプレイヤーを除外する
+        db.collection("users")
+          .where("next", "==", null)
+          .get()
+          .then(function(players) {
+            players.forEach(player => {
+              db.collection("users")
+                .doc(player.id)
+                .update({ playable: false });
+            });
+          });
+        const p0 = this.players.filter(function(player) {
+          return player["next"] == 0;
+        }).length;
+        const p1 = this.players.filter(function(player) {
+          return player["next"] == 1;
+        }).length;
+        const p2 = this.players.filter(function(player) {
+          return player["next"] == 2;
+        }).length;
+        const total = p0 + p1 + p2;
+
+        // どの交渉が成立したかを検証する
+        if (p1 * 2 >= total) {
+          // 半数以上が協調したので、とりあえず協調が成立
+          if (p2 != 0) {
+            // 裏切り者がいたので、裏切りが成立
+            db.collection("users")
+              .where("next", "==", 2)
+              .get()
+              .then(function(players) {
+                players.forEach(player => {
+                  const value = player.data()["value"] + p1 * 20;
+                  console.log("Value", player.data()["value"], "=>", value);
+                  db.collection("users")
+                    .doc(player.id)
+                    .update({ value: value });
+                });
+              });
+          }
+          // 裏切り者がいなければ、協調が成立
+          else
+            db.collection("users")
+              .where("next", "==", 1)
+              .get()
+              .then(function(players) {
+                players.forEach(player => {
+                  const value = player.data()["value"] + p1 * 20;
+                  db.collection("users")
+                    .doc(player.id)
+                    .update({ value: value });
+                });
+              });
+        } else {
+          // 協調が成立しなかった場合
+        }
+      }
     }
   }
 };
