@@ -36,7 +36,7 @@ export default {
               (new Date().getTime() - this.rule.start_time) / 1000
             );
             // 現在第何ゲーム目かを計算する
-            this.gameTurn = parseInt(elapsedTime / 30);
+            this.gameTurn = parseInt(elapsedTime / 30) + 1;
             // サーバからゲーム開始時刻を読み込んで保存（これによって全員が共通の値を持てる）
             this.timeRemind = 29 - (elapsedTime % 30);
             console.log("GameInfo:", this.gameTurn, this.timeRemind);
@@ -66,7 +66,7 @@ export default {
       const elapsedTime = parseInt(
         (new Date().getTime() - this.start_time) / 1000
       );
-      this.gameTurn = parseInt(elapsedTime / 30);
+      this.gameTurn = parseInt(elapsedTime / 30) + 1;
       this.timeRemind = 29 - (elapsedTime % 30);
       if (this.timeRemind == 0) {
         this.calcValue();
@@ -76,14 +76,21 @@ export default {
     gameClear() {
       // タイマーを初期化する
       console.log("Game Clear");
-      this.timerObj == null;
+      db.collection("rules")
+        .doc("mMNTKGPxpraq8z0KnCTB")
+        .update({ mode: false });
+      clearInterval(this.timerObj);
+      this.timerObj = null;
     },
     calcValue() {
+      if (this.players.length == 0) {
+        this.gameClear();
+        return;
+      }
+      console.log("GameInfo", this.players[0].id, this.$store.state.hash);
       // 指定秒数経過後に点数を計算する
-      if (this.players[0].id == "3eiBXf5f2QQ6Mv1a6Ew5Zn3O1fx2") {
+      if (this.players[0].hash == this.$store.state.hash) {
         // 参加しているプレイヤーで最もIDが若いプレイヤーをホストとする
-        // ホストは全員の点数を計算する
-
         // 未投票のプレイヤーを除外する
         db.collection("users")
           .where("next", "==", null)
@@ -95,6 +102,7 @@ export default {
                 .update({ playable: false });
             });
           });
+        // それぞれ選択したプレイヤー数をカウント
         const p0 = this.players.filter(function(player) {
           return player["next"] == 0;
         }).length;
@@ -106,6 +114,33 @@ export default {
         }).length;
         const total = p0 + p1 + p2;
 
+        console.log("GameInfo", p0, p1, p2);
+
+        // 全プレイヤーの投票を一つずつズラす
+        db.collection("users")
+          .get()
+          .then(function(players) {
+            players.forEach(player => {
+              const prev = player.data()["next"];
+              db.collection("users")
+                .doc(player.id)
+                .update({ prev: prev, next: null });
+            });
+          });
+
+        // 沈黙プレイヤーは無条件にポイントを失う
+        db.collection("users")
+          .where("next", "==", 0)
+          .get()
+          .then(function(players) {
+            players.forEach(player => {
+              const value = player.data()["value"] - total * 10;
+              // console.log("Value", player.data()["value"], "=>", value);
+              db.collection("users")
+                .doc(player.id)
+                .update({ value: value });
+            });
+          });
         // どの交渉が成立したかを検証する
         if (p1 * 2 >= total) {
           // 半数以上が協調したので、とりあえず協調が成立
@@ -117,7 +152,7 @@ export default {
               .then(function(players) {
                 players.forEach(player => {
                   const value = player.data()["value"] + p1 * 20;
-                  console.log("Value", player.data()["value"], "=>", value);
+                  // console.log("Value", player.data()["value"], "=>", value);
                   db.collection("users")
                     .doc(player.id)
                     .update({ value: value });
@@ -125,7 +160,7 @@ export default {
               });
           }
           // 裏切り者がいなければ、協調が成立
-          else
+          else {
             db.collection("users")
               .where("next", "==", 1)
               .get()
@@ -137,8 +172,39 @@ export default {
                     .update({ value: value });
                 });
               });
+          }
         } else {
           // 協調が成立しなかった場合
+          if (p2 != 0) {
+            // 裏切り者に制裁が下される
+            db.collection("users")
+              .where("next", "==", 2)
+              .get()
+              .then(function(players) {
+                players.forEach(player => {
+                  const value = player.data()["value"] - p1 * 20;
+                  // console.log("Value", player.data()["value"], "=>", value);
+                  db.collection("users")
+                    .doc(player.id)
+                    .update({ value: value });
+                });
+              });
+          }
+          if (p0 * 2 <= total) {
+            // 沈黙を選んだプレイヤーが半数以下
+            db.collection("users")
+              .where("next", "==", 0)
+              .get()
+              .then(function(players) {
+                players.forEach(player => {
+                  const value = player.data()["value"] + total * 20;
+                  // console.log("Value", player.data()["value"], "=>", value);
+                  db.collection("users")
+                    .doc(player.id)
+                    .update({ value: value });
+                });
+              });
+          }
         }
       }
     }
